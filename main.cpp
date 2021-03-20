@@ -10,9 +10,9 @@
 OneWire oneWire(ONE_WIRE_BUS);
 DallasTemperature sensors(&oneWire);
 
-const char* SSID = "FRITZ!Box 7590 BG";
-const char* PASSWORD = "18893591242611860663";
-const char* MQTT_BROKER = "192.168.178.68";
+const char* SSID = "xxxxxxxxxxxxxxxxxxxxxxx";
+const char* PASSWORD = "xxxxxxxxxxxxxxxxxxxxxxx";
+const char* MQTT_BROKER = "xxxxxxxxxxxxxxxxxxxxxxxx";
 
 const int SWITCH_PIN = D4;
 
@@ -40,8 +40,6 @@ float measureTemperature(){
 
     sensors.requestTemperatures();
     float temp = sensors.getTempCByIndex(0);
-  
-    //Serial.println("Temperature is:" + String(temp)+ "°C");
 
     return temp;
 }
@@ -53,10 +51,7 @@ void reconnect() {
   while (!client.connected()&&(millis() - timestamp2 <= period)) {
        //Verbindungsversuch:
     if (client.connect("/dev/smoker_temp")) {
-      //delay(2000);
     } else {
-      //delay(2000);
-     //  ESP.deepSleep(4260000000);
       delay(100); 
     }
     yield();
@@ -67,18 +62,15 @@ void sendToMQTTBroker(){
 
     String tempBuff;
     tempBuff = String(measureTemperature());
-      tempBuff.toCharArray(mqtt_pub_value_temperature,tempBuff.length()+1);
-
-      client.publish("/dev/smoker_temp", mqtt_pub_value_temperature,true);
+    tempBuff.toCharArray(mqtt_pub_value_temperature,tempBuff.length()+1);
+    client.publish("/dev/smoker_temp", mqtt_pub_value_temperature,true);
 }
 void heatUp(){
 
     while(measureTemperature()<30.0){
-      Serial.println("heating UP, HIGH");
       digitalWrite(SWITCH_PIN,LOW);
       sendToMQTTBroker();
     }
-    Serial.println("heated up LOW");
     digitalWrite(SWITCH_PIN, HIGH);
     rightTemperature=true;
 }
@@ -101,7 +93,6 @@ void loop(void){
     sendToMQTTBroker();
 
     if(measureTemperature()<=30.0){
-      Serial.println("too cold!");
       heatUp();
     }
     delay(1000);
