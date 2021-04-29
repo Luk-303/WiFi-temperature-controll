@@ -15,9 +15,9 @@
 OneWire oneWire(ONE_WIRE_BUS);
 DallasTemperature sensors(&oneWire);
 
-const char* SSID = "FRITZ!Box 7590 BG";
-const char* PASSWORD = "18893591242611860663";
-const char* MQTT_BROKER = "192.168.178.85";
+const char* SSID = "xxxxxxxxxxxxxxxxx";
+const char* PASSWORD = "xxxxxxxxxxxxxxx";
+const char* MQTT_BROKER = "xxxxxxxxxxxxxx";
 
 unsigned long timestamp;
 unsigned long period = 5000;
