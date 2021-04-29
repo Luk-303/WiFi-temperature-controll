@@ -6,6 +6,7 @@
 #include <DHT.h>
 #include <Adafruit_Sensor.h>
 
+
 #define ONE_WIRE_BUS D4
 #define SUBSCRIBE_LAMP_MANUAL "/sub/smoker_temp/lamp_manual"
 #define SUBSCRIBE_TURN_OFF "/sub/smoker_temp/turn_off"
@@ -14,10 +15,10 @@
 
 OneWire oneWire(ONE_WIRE_BUS);
 DallasTemperature sensors(&oneWire);
-
-const char* SSID = "xxxxxxxxxxxxxxxxx";
-const char* PASSWORD = "xxxxxxxxxxxxxxx";
-const char* MQTT_BROKER = "xxxxxxxxxxxxxx";
+DHT dht(DHT_SENSOR,DHT21);
+const char* SSID = "FRITZ!Box 7590 BG";
+const char* PASSWORD = "18893591242611860663";
+const char* MQTT_BROKER = "192.168.178.85";
 
 unsigned long timestamp;
 unsigned long period = 5000;
@@ -28,7 +29,7 @@ bool turnOFF=false;
 
 WiFiClient WemosD1;
 PubSubClient client(WemosD1);
-DHT dht(DHT_SENSOR,DHT21);
+
 
 char mqtt_pub_value_temperature_inside[10];
 char mqtt_pub_value_temperature_outside[10];
@@ -42,28 +43,7 @@ float measureTemperatureInside();
 float measureHumidityOutside();
 void manualMode(char*, byte*, unsigned int);
 
-float measureTemperatureOutside(){
 
-  float outdoorTempBuff=dht.readTemperature();
-  delay(2000);
-  return outdoorTempBuff;
-
-}
-
-float measureTemperatureInside(){
-
-    sensors.requestTemperatures();
-    float temp = sensors.getTempCByIndex(0);
-    return temp;
-}
-
-float measureHumidityOutside(){
-  
-  float humidityOutsideBuff=dht.readHumidity();
-  delay(2000);
-  return humidityOutsideBuff;
-
-}
 
 void heatUp(){
 
