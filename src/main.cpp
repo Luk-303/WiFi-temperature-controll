@@ -1,40 +1,30 @@
 #include <Arduino.h>
-#include <ESP8266WiFi.h>
-#include <PubSubClient.h>
-#include <OneWire.h>
-#include <DallasTemperature.h>
-#include <DHT.h>
 #include <Adafruit_Sensor.h>
+#include "SENSOR_DATA.h"
+#include "MQTT_PUB.h"
 
-
-#define ONE_WIRE_BUS D4
 #define SUBSCRIBE_LAMP_MANUAL "/sub/smoker_temp/lamp_manual"
 #define SUBSCRIBE_TURN_OFF "/sub/smoker_temp/turn_off"
-#define DHT_SENSOR D5
 #define SWITCH_PIN D1
 
-OneWire oneWire(ONE_WIRE_BUS);
-DallasTemperature sensors(&oneWire);
-DHT dht(DHT_SENSOR,DHT21);
+OneWire objOneWire(ONE_WIRE_BUS);
+DallasTemperature objSensors(&objOneWire);
+DHT objDHT(DHT_SENSOR,DHT21);
+WiFiClient objWemosD1;
+PubSubClient objClient(objWemosD1);
+SENSOR_DATA objSensorData(objSensors,objDHT);
+MQTT_PUB objMQTT(objSensorData);
+
 const char* SSID = "FRITZ!Box 7590 BG";
 const char* PASSWORD = "18893591242611860663";
 const char* MQTT_BROKER = "192.168.178.85";
 
-unsigned long timestamp;
-unsigned long period = 5000;
+unsigned long nTimestamp;
+unsigned long nPeriod = 5000;
 
-bool lightOn=false;
-bool lightManual=false;
-bool turnOFF=false;
-
-WiFiClient WemosD1;
-PubSubClient client(WemosD1);
-
-
-char mqtt_pub_value_temperature_inside[10];
-char mqtt_pub_value_temperature_outside[10];
-char mqtt_pub_value_humidity_outside[10];
-char mqtt_pub_state_light_on[10];
+bool bLightOn=false;
+bool bLightManual=false;
+bool bTurnOFF=false;
 
 void sendToMQTTBroker();
 void heatUP();
@@ -43,86 +33,35 @@ float measureTemperatureInside();
 float measureHumidityOutside();
 void manualMode(char*, byte*, unsigned int);
 
-
-
 void heatUp(){
 
-
-    while(measureTemperatureInside()<13.0){
-      digitalWrite(SWITCH_PIN,HIGH);
-      sendToMQTTBroker();
-      lightOn=true;
-    }
-    digitalWrite(SWITCH_PIN, LOW);
-    lightOn=false;
-}
-
-void sendToMQTTBroker(){
-
-    String tempInsideBuff;
-    String tempOutsideBuff;
-    String humOutsideBuff;
-    String stateLightBuff;
-
-  if (turnOFF==true){
-    tempInsideBuff = "--,-";
-    tempInsideBuff.toCharArray(mqtt_pub_value_temperature_inside,tempInsideBuff.length()+1);
-    client.publish("/pub/smoker_temp/inside", mqtt_pub_value_temperature_inside,true);
-
-    tempOutsideBuff = "--,-";
-    tempOutsideBuff.toCharArray(mqtt_pub_value_temperature_outside,tempOutsideBuff.length()+1);
-    client.publish("/pub/smoker_temp/outside",mqtt_pub_value_temperature_outside,true);
-
-    Serial.println(" hier müsste die temp gesendet werden ");
-
-    humOutsideBuff = "--,-";
-    humOutsideBuff.toCharArray(mqtt_pub_value_humidity_outside,humOutsideBuff.length()+1);
-    client.publish("/pub/smoker_temp/humidity",mqtt_pub_value_humidity_outside,true);
-
-    stateLightBuff="0";
-    stateLightBuff.toCharArray(mqtt_pub_state_light_on,stateLightBuff.length()+1);
-    client.publish("/pub/smoker_temp/light",mqtt_pub_state_light_on,true);
+  while(objSensorData.measureInsideTemperature(objSensors)<13.0){
+    digitalWrite(SWITCH_PIN,HIGH);
+    objMQTT.sendValuesToBroker(objWemosD1,objClient);
+    bLightOn=true;
   }
-  else {
-    tempInsideBuff = String(measureTemperatureInside());
-    tempInsideBuff.toCharArray(mqtt_pub_value_temperature_inside,tempInsideBuff.length()+1);
-    client.publish("/pub/smoker_temp/inside", mqtt_pub_value_temperature_inside,true);
-
-    tempOutsideBuff = String(measureTemperatureOutside());
-    tempOutsideBuff.toCharArray(mqtt_pub_value_temperature_outside,tempOutsideBuff.length()+1);
-    client.publish("/pub/smoker_temp/outside",mqtt_pub_value_temperature_outside,true);
-
-    Serial.println(" hier müsste die temp gesendet werden ");
-
-    humOutsideBuff = String(measureHumidityOutside());
-    humOutsideBuff.toCharArray(mqtt_pub_value_humidity_outside,humOutsideBuff.length()+1);
-    client.publish("/pub/smoker_temp/humidity",mqtt_pub_value_humidity_outside,true);
-
-    stateLightBuff=String(lightOn);
-    stateLightBuff.toCharArray(mqtt_pub_state_light_on,stateLightBuff.length()+1);
-    client.publish("/pub/smoker_temp/light",mqtt_pub_state_light_on,true);
-
-  }
+  digitalWrite(SWITCH_PIN, LOW);
+  bLightOn=false;
 }
 
 void setUpWLan(){
         
     WiFi.begin(SSID,PASSWORD);
-    timestamp=millis();
-        while ((millis() - timestamp <= period)&&WiFi.status()!=WL_CONNECTED){
+    nTimestamp=millis();
+        while ((millis() - nTimestamp <= nPeriod)&&WiFi.status()!=WL_CONNECTED){
         yield();
     }
 }
 
 void reconnect() {
 
-  long timestamp2=millis();
+  long nTimestamp2=millis();
 
-  while (!client.connected()&&(millis() - timestamp2 <= period)) {
+  while (!objClient.connected()&&(millis() - nTimestamp2 <= nPeriod)) {
 
-    if (client.connect("/dev/smoker_temp")) {
-      client.subscribe(SUBSCRIBE_LAMP_MANUAL);
-      client.subscribe(SUBSCRIBE_TURN_OFF);
+    if (objClient.connect("/dev/smoker_temp")) {
+      objClient.subscribe(SUBSCRIBE_LAMP_MANUAL);
+      objClient.subscribe(SUBSCRIBE_TURN_OFF);
     } else {
       delay(100); 
     }
@@ -132,81 +71,78 @@ void reconnect() {
 
 void manualMode(char* topic, byte* message, unsigned int length){
 
-    String messageBuff;
+  String sMessageBuff;
 
-    for(unsigned int i=0;i<length;i++){
-      messageBuff += ((char)message[i]);
-    }  
-      if(messageBuff=="false"){
-        digitalWrite(SWITCH_PIN,LOW);
-        lightOn=false;
-        lightManual=false;
-        delay(200);
-      }
-      else if(messageBuff=="true"){
-        digitalWrite(SWITCH_PIN,HIGH);
-        lightOn=true;
-        lightManual=true;
-        delay(200);
-      }
+  for(unsigned int i=0;i<length;i++){
+    sMessageBuff += ((char)message[i]);
+  }  
+
+  if(sMessageBuff=="false"){
+    digitalWrite(SWITCH_PIN,LOW);
+    bLightOn=false;
+    bLightManual=false;
+    delay(200);
+  }
+  else if(sMessageBuff=="true"){
+    digitalWrite(SWITCH_PIN,HIGH);
+    bLightOn=true;
+    bLightManual=true;
+    delay(200);
+  }
 }
 
 void callback(char* topic,byte* message,unsigned int length){
-    String messageBuff;
 
-      for(unsigned int i=0;i<length;i++){
-      Serial.print((char)message[i]);
-      messageBuff += ((char)message[i]);
+  String sMessageBuff;
+
+    for(unsigned int i=0;i<length;i++){
+    sMessageBuff += ((char)message[i]);
     } 
 
     if (String(topic)==SUBSCRIBE_LAMP_MANUAL){
       manualMode(topic,message,length);
     }
-    else if (String(topic)==SUBSCRIBE_TURN_OFF){
-      if (messageBuff=="1"){
-      turnOFF=true;
-      sendToMQTTBroker();
-      }
+    else if (String(topic)==SUBSCRIBE_TURN_OFF&&sMessageBuff=="1"){
+      objMQTT.setTurnOFF(true);
+      objMQTT.sendIdleToBroker(objWemosD1,objClient);
     }
 }
 
 void setup(void)
 {
     Serial.begin (9600);
-    sensors.begin();
+    objSensors.begin();
 
-    dht.begin();
+    objDHT.begin();
 
     pinMode(SWITCH_PIN,OUTPUT);
     
     setUpWLan();
     
-    client.setServer(MQTT_BROKER, 1883);
-    client.setCallback(callback);
+    objClient.setServer(MQTT_BROKER, 1883);
+    objClient.setCallback(callback);
 }
 
 void loop(void){
 
-  float tempInside = measureTemperatureInside();
-    
-    if (!client.connected()) {
-     reconnect();
-    }
+  objSensorData.measureAllValues(objSensors, objDHT);
 
-    client.loop();
-
-    sendToMQTTBroker();
-
-    if(tempInside<=10.0){
-     heatUp();
-    }
-    else if (tempInside>10.0&&lightManual==false){
-      digitalWrite(SWITCH_PIN,LOW);
-    }
-    else if (lightManual==true){
-      delay(20);
-    }
-
+  float fTempInside = objSensorData.getInsideTemp();
+  
+  if (!objClient.connected()) {
+    reconnect();
+  }
+  objClient.loop();
+  objMQTT.sendValuesToBroker(objWemosD1, objClient);
+  if(fTempInside<=10.0){
+    heatUp();
+  }
+  else if (fTempInside>10.0&&bLightManual==false){
+    digitalWrite(SWITCH_PIN,LOW);
+  }
+  else if (bLightManual==true){
+    delay(20);
+  }
 }
 
 

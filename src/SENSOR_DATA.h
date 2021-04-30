@@ -7,17 +7,22 @@
 #define ONE_WIRE_BUS D4
 #define DHT_SENSOR D5
 
-class SensorData{
+class SENSOR_DATA{
 private:
     float fOutsideTemp;
     float fInsideTemp;
     float fOutsideHumidity;
 public:
-    SensorData(DallasTemperature&,DHT&);
+    SENSOR_DATA(DallasTemperature&,DHT&);
+
     float getOutsideTemp();
     float getInsideTemp();
     float getOutsideHum();
+
     float measureOutsideTemperature(DHT&);
     float measureInsideTemperature(DallasTemperature&);
     float measureOutsideHumidity(DHT&);
+
+    void measureAllValues(DallasTemperature&,DHT&);
+
 };
