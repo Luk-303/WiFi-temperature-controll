@@ -15,9 +15,9 @@ PubSubClient objClient(objWemosD1);
 SENSOR_DATA objSensorData(objSensors,objDHT);
 MQTT_PUB objMQTT(objSensorData);
 
-const char* SSID = "FRITZ!Box 7590 BG";
-const char* PASSWORD = "18893591242611860663";
-const char* MQTT_BROKER = "192.168.178.85";
+const char* SSID = "xxxxxxxxxxxxx";
+const char* PASSWORD = "xxxxxxxxxxxxxx";
+const char* MQTT_BROKER = "xxxxxxxxxxxxxxxxxx";
 
 unsigned long nTimestamp;
 unsigned long nPeriod = 5000;
