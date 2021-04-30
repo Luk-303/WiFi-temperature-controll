@@ -15,9 +15,9 @@ PubSubClient objClient(objWemosD1);
 SENSOR_DATA objSensorData(objSensors,objDHT);
 MQTT_PUB objMQTT(objSensorData);
 
-const char* SSID = "xxxxxxxxxxxxx";
-const char* PASSWORD = "xxxxxxxxxxxxxx";
-const char* MQTT_BROKER = "xxxxxxxxxxxxxxxxxx";
+const char* SSID = "xxxxxxxxxxxxxxxxx";
+const char* PASSWORD = "xxxxxxxxxxxxxxxxxx";
+const char* MQTT_BROKER = "xxxxxxxxxxxxxxxxxxxxx";
 
 unsigned long nTimestamp;
 unsigned long nPeriod = 5000;

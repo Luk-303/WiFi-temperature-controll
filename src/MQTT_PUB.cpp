@@ -6,15 +6,6 @@ MQTT_PUB::MQTT_PUB(SENSOR_DATA& objSensor_Data){
     sHumOutsideBuff=objSensor_Data.getOutsideHum();
     sStateLightBuff = "false";
 }
-/*
-void MQTT_PUB::setLightOnBuff(MQTT_SUB&){
-    MQTT_SUB
-}
-*/
-/*
-void MQTT_PUB::setLightOnBuff({
-    sLightOnBuff=String (bLightOn);
-}*/
 
 void MQTT_PUB::sendValuesToBroker(WiFiClient& WemosD1, PubSubClient& client){
 
