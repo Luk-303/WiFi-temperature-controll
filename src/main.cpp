@@ -60,8 +60,10 @@ void reconnect() {
   while (!objClient.connected()&&(millis() - nTimestamp2 <= nPeriod)) {
 
     if (objClient.connect("/dev/smoker_temp")) {
+
       objClient.subscribe(SUBSCRIBE_LAMP_MANUAL);
       objClient.subscribe(SUBSCRIBE_TURN_OFF);
+
     } else {
       delay(100); 
     }
@@ -102,7 +104,7 @@ void callback(char* topic,byte* message,unsigned int length){
     if (String(topic)==SUBSCRIBE_LAMP_MANUAL){
       manualMode(topic,message,length);
     }
-    else if (String(topic)==SUBSCRIBE_TURN_OFF&&sMessageBuff=="1"){
+    else if (String(topic)==SUBSCRIBE_TURN_OFF && sMessageBuff=="1"){
       objMQTT.setTurnOFF(true);
       objMQTT.sendIdleToBroker(objWemosD1,objClient);
     }
@@ -125,22 +127,26 @@ void setup(void)
 
 void loop(void){
 
+  float fTempInside;
+
   objSensorData.measureAllValues(objSensors, objDHT);
 
-  float fTempInside = objSensorData.getInsideTemp();
+  fTempInside = objSensorData.getInsideTemp();
   
   if (!objClient.connected()) {
     reconnect();
   }
+
   objClient.loop();
   objMQTT.sendValuesToBroker(objWemosD1, objClient);
+
   if(fTempInside<=10.0){
     heatUp();
   }
-  else if (fTempInside>10.0&&bLightManual==false){
+  else if (fTempInside>10.0 && !bLightManual){
     digitalWrite(SWITCH_PIN,LOW);
   }
-  else if (bLightManual==true){
+  else if (bLightManual){
     delay(20);
   }
 }
