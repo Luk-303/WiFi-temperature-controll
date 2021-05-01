@@ -7,6 +7,7 @@
 #define ONE_WIRE_BUS D4
 #define DHT_SENSOR D5
 
+
 class SENSOR_DATA{
 private:
     float fOutsideTemp;
