@@ -1,6 +1,5 @@
 #include "SENSOR_DATA.h"
 
-
 SENSOR_DATA::SENSOR_DATA(DallasTemperature& sensors,DHT& dht){
     measureOutsideTemperature(dht);
     measureInsideTemperature(sensors);
